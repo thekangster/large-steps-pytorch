@@ -51,12 +51,12 @@ face_indices = mi.Vector3u(N - 1, (index + 1) % (N - 2), index % (N - 2))
 #print("len(face_indices) = ", len(face_indices))
 
 # generate face normals ??
-nref = n_ref.tolist()
-x2 = dr.zeros(mi.Float, len(v_ref))
-y2 = dr.zeros(mi.Float, len(v_ref))
-z2 = dr.zeros(mi.Float, len(v_ref))
+nref = f_ref.tolist()
+x2 = dr.zeros(mi.Float, len(f_ref))
+y2 = dr.zeros(mi.Float, len(f_ref))
+z2 = dr.zeros(mi.Float, len(f_ref))
 idx = 0
-for i in vref:
+for i in nref:
     x2[idx] = i[0]
     y2[idx] = i[1]
     z2[idx] = i[2]
@@ -76,7 +76,7 @@ mesh = mi.Mesh(
 mesh_params = mi.traverse(mesh)
 print(mesh_params)
 mesh_params['vertex_positions'] = dr.ravel(vertex_pos)
-mesh_params['faces'] = dr.ravel(face_indices)
+mesh_params['faces'] = dr.ravel(face_norms)
 #mesh_params['vertex_normals'] = dr.ravel(face_norms)
 print(mesh_params.update())
 
@@ -99,5 +99,5 @@ plt.axis("off")
 plt.imshow(mi.util.convert_to_bitmap(img));
 plt.show()
 
-mesh.write_ply("mymesh.ply")
+#mesh.write_ply("mymesh.ply")
 
