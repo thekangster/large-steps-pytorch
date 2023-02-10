@@ -20,7 +20,6 @@ plt.axis("off")
 plt.imshow(mi.util.convert_to_bitmap(image_ref));
 plt.show()
 '''
-
 # get largesteps scene params
 scene_large = load_scene(filepath)
 # Load reference shape
@@ -31,63 +30,74 @@ f_ref = scene_large["mesh-target"]["faces"]
 v = scene_large["mesh-source"]["vertices"]
 f = scene_large["mesh-source"]["faces"]
 
-# tensor -> point3f ??
-vref = v_ref.tolist()
-x = dr.zeros(mi.Float, len(v_ref))
-y = dr.zeros(mi.Float, len(v_ref))
-z = dr.zeros(mi.Float, len(v_ref))
-idx = 0
-for i in vref:
-    x[idx] = i[0]
-    y[idx] = i[1]
-    z[idx] = i[2]
-    idx += 1
-vertex_pos = mi.Point3f(x, y, z)
+def tensor_to_point3f(T):
+    to_vector = T.tolist()
+    x = dr.zeros(mi.Float, len(to_vector))
+    y = dr.zeros(mi.Float, len(to_vector))
+    z = dr.zeros(mi.Float, len(to_vector))
+
+    for i, vec in enumerate(to_vector):
+        x[i] = vec[0]
+        y[i] = vec[1]
+        z[i] = vec[2]
+
+    return mi.Point3f(x, y, z)
+
+# tensor -> point3f
+vertex_pos = tensor_to_point3f(v_ref)
+#vertex_pos = tensor_to_point3f(v)
 
 # generate face indices ??
+'''
 N = len(v_ref)
 index = dr.arange(mi.UInt32, N - 1)
 face_indices = mi.Vector3u(N - 1, (index + 1) % (N - 2), index % (N - 2))
-#print("len(face_indices) = ", len(face_indices))
+'''
 
 # generate face normals ??
-nref = n_ref.tolist()
-x2 = dr.zeros(mi.Float, len(v_ref))
-y2 = dr.zeros(mi.Float, len(v_ref))
-z2 = dr.zeros(mi.Float, len(v_ref))
-idx = 0
-for i in vref:
-    x2[idx] = i[0]
-    y2[idx] = i[1]
-    z2[idx] = i[2]
-    idx += 1
-face_norms = mi.Point3f(x2, y2, z2)
+face_norms = tensor_to_point3f(f_ref)
+#face_norms = tensor_to_point3f(f)
 
 # create mesh
 mesh = mi.Mesh(
     "mymesh", 
     len(v_ref), 
-    #len(f_ref), 
-    len(v_ref)-1,
+    #len(v_ref)-1,
+    len(f_ref),
     has_vertex_normals=False, 
     has_vertex_texcoords=False,
 )
 
 mesh_params = mi.traverse(mesh)
-print(mesh_params)
+#print(mesh_params)
 mesh_params['vertex_positions'] = dr.ravel(vertex_pos)
-mesh_params['faces'] = dr.ravel(face_indices)
+mesh_params['faces'] = dr.ravel(face_norms)
 #mesh_params['vertex_normals'] = dr.ravel(face_norms)
 print(mesh_params.update())
 
+'''
+"type": "point",
+"position": [0.0, 5.0, 0.0],
+"intensity": {
+    "type": "spectrum",
+    "value": 1.0,
+}
+'''
 scene = mi.load_dict({
     "type": "scene",
     "integrator": {"type": "path"},
-    "light": {"type": "constant"},
+    "light": {
+        'type': 'point',
+        'position': [0.0, -1.0, 7.0],
+        'intensity': {
+            'type': 'spectrum',
+            'value': 15.0,
+        }
+    },
     "sensor": {
         "type": "perspective",
         "to_world": mi.ScalarTransform4f.look_at(
-            origin=[0, -1, 10], target=[0, 0, 0], up=[0, 0, 1]
+            origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
         ),
     },
     "mymesh": mesh,
@@ -99,5 +109,5 @@ plt.axis("off")
 plt.imshow(mi.util.convert_to_bitmap(img));
 plt.show()
 
-mesh.write_ply("mymesh.ply")
+#mesh.write_ply("mymesh.ply")
 
