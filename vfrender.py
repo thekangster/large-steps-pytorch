@@ -31,37 +31,24 @@ f_ref = scene_large["mesh-target"]["faces"]
 v = scene_large["mesh-source"]["vertices"]
 f = scene_large["mesh-source"]["faces"]
 
-# tensor -> point3f ??
-vref = v_ref.tolist()
-x = dr.zeros(mi.Float, len(v_ref))
-y = dr.zeros(mi.Float, len(v_ref))
-z = dr.zeros(mi.Float, len(v_ref))
-idx = 0
-for i in vref:
-    x[idx] = i[0]
-    y[idx] = i[1]
-    z[idx] = i[2]
-    idx += 1
-vertex_pos = mi.Point3f(x, y, z)
+def tensor_to_point3f(T):
+    to_vector = T.tolist()
+    x = dr.zeros(mi.Float, len(to_vector))
+    y = dr.zeros(mi.Float, len(to_vector))
+    z = dr.zeros(mi.Float, len(to_vector))
 
-# generate face indices ??
-N = len(v_ref)
-index = dr.arange(mi.UInt32, N - 1)
-face_indices = mi.Vector3u(N - 1, (index + 1) % (N - 2), index % (N - 2))
-#print("len(face_indices) = ", len(face_indices))
+    for i, vec in enumerate(to_vector):
+        x[i] = vec[0]
+        y[i] = vec[1]
+        z[i] = vec[2]
+
+    return mi.Point3f(x, y, z)
+
+# tensor -> point3f ??
+vertex_pos = tensor_to_point3f(v_ref)
 
 # generate face normals ??
-nref = f_ref.tolist()
-x2 = dr.zeros(mi.Float, len(f_ref))
-y2 = dr.zeros(mi.Float, len(f_ref))
-z2 = dr.zeros(mi.Float, len(f_ref))
-idx = 0
-for i in nref:
-    x2[idx] = i[0]
-    y2[idx] = i[1]
-    z2[idx] = i[2]
-    idx += 1
-face_norms = mi.Point3f(x2, y2, z2)
+face_norms = tensor_to_point3f(f_ref)
 
 # create mesh
 mesh = mi.Mesh(
