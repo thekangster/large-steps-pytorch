@@ -67,8 +67,7 @@ face_norms = mi.Point3f(x2, y2, z2)
 mesh = mi.Mesh(
     "mymesh", 
     len(v_ref), 
-    #len(f_ref), 
-    len(v_ref)-1,
+    len(f_ref), 
     has_vertex_normals=False, 
     has_vertex_texcoords=False,
 )
@@ -83,11 +82,18 @@ print(mesh_params.update())
 scene = mi.load_dict({
     "type": "scene",
     "integrator": {"type": "path"},
-    "light": {"type": "constant"},
+    "light": {
+        "type": "point",
+        "position": [0.0, -1.0, 7.0],
+        "intensity": {
+            "type": "spectrum",
+            "value": 15.0,
+        }
+    },
     "sensor": {
         "type": "perspective",
         "to_world": mi.ScalarTransform4f.look_at(
-            origin=[0, -1, 10], target=[0, 0, 0], up=[0, 0, 1]
+            origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
         ),
     },
     "mymesh": mesh,
