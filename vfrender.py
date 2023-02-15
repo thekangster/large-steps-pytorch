@@ -58,13 +58,15 @@ face_indices = mi.Vector3u(N - 1, (index + 1) % (N - 2), index % (N - 2))
 face_norms = tensor_to_point3f(f_ref)
 #face_norms = tensor_to_point3f(f)
 
+vertex_norms = tensor_to_point3f(n_ref)
+
 # create mesh
 mesh = mi.Mesh(
     "mymesh", 
     len(v_ref), 
     #len(v_ref)-1,
     len(f_ref),
-    has_vertex_normals=False, 
+    has_vertex_normals=True, 
     has_vertex_texcoords=False,
 )
 
@@ -72,15 +74,15 @@ mesh_params = mi.traverse(mesh)
 #print(mesh_params)
 mesh_params['vertex_positions'] = dr.ravel(vertex_pos)
 mesh_params['faces'] = dr.ravel(face_norms)
-#mesh_params['vertex_normals'] = dr.ravel(face_norms)
+mesh_params['vertex_normals'] = dr.ravel(vertex_norms)
 print(mesh_params.update())
 
 '''
-"type": "point",
-"position": [0.0, 5.0, 0.0],
-"intensity": {
-    "type": "spectrum",
-    "value": 1.0,
+'type': 'point',
+'position': [0.0, -1.0, 7.0],
+'intensity': {
+    'type': 'spectrum',
+    'value': 15.0,
 }
 '''
 scene = mi.load_dict({
