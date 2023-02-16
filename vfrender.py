@@ -43,26 +43,12 @@ def tensor_to_point3f(T):
 
     return mi.Point3f(x, y, z)
 
-# tensor -> point3f
-vertex_pos = tensor_to_point3f(v_ref)
-#vertex_pos = tensor_to_point3f(v)
+v_ = tensor_to_point3f(v_ref)
+n_ = tensor_to_point3f(n_ref)
+f_ = tensor_to_point3f(f_ref)
 
-# generate face indices ??
-'''
-N = len(v_ref)
-index = dr.arange(mi.UInt32, N - 1)
-face_indices = mi.Vector3u(N - 1, (index + 1) % (N - 2), index % (N - 2))
-'''
-
-# generate face normals ??
-face_norms = tensor_to_point3f(f_ref)
-#face_norms = tensor_to_point3f(f)
-
-vertex_norms = tensor_to_point3f(n_ref)
-
-# create mesh
-mesh = mi.Mesh(
-    "mymesh", 
+refmesh = mi.Mesh(
+    "refmesh", 
     len(v_ref), 
     #len(v_ref)-1,
     len(f_ref),
@@ -70,21 +56,11 @@ mesh = mi.Mesh(
     has_vertex_texcoords=False,
 )
 
-mesh_params = mi.traverse(mesh)
-#print(mesh_params)
-mesh_params['vertex_positions'] = dr.ravel(vertex_pos)
-mesh_params['faces'] = dr.ravel(face_norms)
-mesh_params['vertex_normals'] = dr.ravel(vertex_norms)
-print(mesh_params.update())
+mesh_params = mi.traverse(refmesh)
+mesh_params['vertex_positions'] = dr.ravel(v_)
+mesh_params['vertex_normals'] = dr.ravel(n_)
+mesh_params['faces'] = dr.ravel(f_)
 
-'''
-'type': 'point',
-'position': [0.0, -1.0, 7.0],
-'intensity': {
-    'type': 'spectrum',
-    'value': 15.0,
-}
-'''
 scene = mi.load_dict({
     "type": "scene",
     "integrator": {"type": "path"},
@@ -102,14 +78,95 @@ scene = mi.load_dict({
             origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
         ),
     },
-    "mymesh": mesh,
+    "refmesh": refmesh,
 })
-
-img = mi.render(scene)
-
+ref_imgs = mi.render(scene)
 plt.axis("off")
-plt.imshow(mi.util.convert_to_bitmap(img));
+plt.imshow(mi.util.convert_to_bitmap(ref_imgs));
 plt.show()
 
+from tqdm import trange
+from largesteps.optimize import AdamUniform
+from scripts.geometry import compute_vertex_normals, compute_face_normals
+
+steps = 1000 # Number of optimization steps
+step_size = 3e-2 # Step size
+lambda_ = 19 # Hyperparameter lambda of our method, used to compute the matrix (I + lambda_*L)
+
+# Compute the system matrix
+M = compute_matrix(v, f, lambda_)
+# Parameterize
+u = to_differential(M, v)
+print("printing u")
+print(u.size())
+
+u.requires_grad = True
+opt = AdamUniform([u], step_size)
+
+face_norms = tensor_to_point3f(f)
+
+for it in trange(steps):
+# Get cartesian coordinates for parameterization
+    v = from_differential(M, u, 'Cholesky')
+
+# Recompute vertex normals
+    face_normals = compute_face_normals(v, f)
+    n = compute_vertex_normals(v, f, face_normals)
+
+    vertex_pos = tensor_to_point3f(v)
+    vertex_norms = tensor_to_point3f(n)
+
+# create mesh
+    mesh = mi.Mesh(
+        "mymesh", 
+        len(v), 
+        #len(v_ref)-1,
+        len(f),
+        has_vertex_normals=True, 
+        has_vertex_texcoords=False,
+    )
+
+    mesh_params = mi.traverse(mesh)
+    mesh_params['vertex_positions'] = dr.ravel(vertex_pos)
+    mesh_params['vertex_normals'] = dr.ravel(vertex_norms)
+    mesh_params['faces'] = dr.ravel(face_norms)
+
+    scene = mi.load_dict({
+        "type": "scene",
+        "integrator": {"type": "path"},
+        "light": {
+            'type': 'point',
+            'position': [0.0, -1.0, 7.0],
+            'intensity': {
+                'type': 'spectrum',
+                'value': 15.0,
+            }
+        },
+        "sensor": {
+            "type": "perspective",
+            "to_world": mi.ScalarTransform4f.look_at(
+                origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
+            ),
+        },
+        "mymesh": mesh,
+    })
+
+    opt_imgs = mi.render(scene)
+
+# Compute L1 image loss
+    loss = (opt_imgs - ref_imgs).abs().mean()
+
+# Backpropagate
+    opt.zero_grad()
+    loss.backward()
+    
+    # Update parameters
+    opt.step() 
+
+'''
+plt.axis("off")
+plt.imshow(mi.util.convert_to_bitmap(opt_imgs));
+plt.show()
+'''
 #mesh.write_ply("mymesh.ply")
 
