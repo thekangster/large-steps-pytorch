@@ -1,3 +1,57 @@
+import mitsuba as mi
+import drjit as dr
+
+import trimesh
+import xatlas
+
+mesh = trimesh.load_mesh("00190663.obj")
+vmapping, indices, uvs = xatlas.parametrize(mesh.vertices, mesh.faces)
+xatlas.export("output.obj", mesh.vertices[vmapping], indices, uvs)
+
+uvmesh = mi.Mesh(
+    "uvmesh", 
+    len(vmapping), 
+    len(uvs), 
+    has_vertex_normals=False, 
+    has_vertex_texcoords=False,
+)
+
+uvmesh_params = mi.traverse(uvmesh)
+print(uvmesh_params)
+uvmesh_params['vertex_positions'] = mesh.vertices
+uvmesh_params['faces'] = mesh.faces
+#mesh_params['vertex_normals'] = dr.ravel(face_norms)
+print(uvmesh_params.update())
+
+scene = mi.load_dict({
+    "type": "scene",
+    "integrator": {"type": "path"},
+    "light": {
+        "type": "point",
+        "position": [0.0, -1.0, 7.0],
+        "intensity": {
+            "type": "spectrum",
+            "value": 15.0,
+        }
+    },
+    "sensor": {
+        "type": "perspective",
+        "to_world": mi.ScalarTransform4f.look_at(
+            origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
+        ),
+    },
+    "uvmesh": uvmesh,
+})
+
+img = mi.render(scene)
+
+plt.axis("off")
+plt.imshow(mi.util.convert_to_bitmap(img));
+plt.show()
+
+
+
+'''
 # imports
 import mitsuba as mi
 import drjit as dr
@@ -15,11 +69,11 @@ mi.set_variant('llvm_ad_rgb')
 
 scene_params = mi.load_file(filepath)#, res=128)#, integrator='prb')
 image_ref = mi.render(scene_params, spp=512)
-'''
+"""
 plt.axis("off")
 plt.imshow(mi.util.convert_to_bitmap(image_ref));
 plt.show()
-'''
+"""
 
 # get largesteps scene params
 scene_large = load_scene(filepath)
@@ -94,3 +148,4 @@ plt.show()
 
 #mesh.write_ply("mymesh.ply")
 
+'''
