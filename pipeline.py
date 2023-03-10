@@ -96,8 +96,6 @@ def scale_independent_loss(image, ref):
 
 from scripts.geometry import compute_vertex_normals, compute_face_normals
 for it in trange(steps):
-    print("starting the loop")
-
     # Get cartesian coordinates for parameterization
     v = from_differential(M, u, 'Cholesky')
 
@@ -108,10 +106,9 @@ for it in trange(steps):
     # Render images
     opt_imgs = mi.render(compute_mitsuba_scene(v, n, f))
     #to_optimize = mi.traverse(opt_imgs)
-    #print(to_optimize)
 
-    loss = scale_independent_loss(opt_imgs, ref_imgs)
-    loss.backward()
+    loss = loss_fn(v, u)
+    print(loss)
 
     # Compute L1 image loss
     #loss = (opt_imgs - ref_imgs).abs().mean()
