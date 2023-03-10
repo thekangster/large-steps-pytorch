@@ -105,21 +105,14 @@ for it in trange(steps):
 
     # Render images
     opt_imgs = mi.render(compute_mitsuba_scene(v, n, f))
-    #to_optimize = mi.traverse(opt_imgs)
 
-    loss = loss_fn(v, u)
-    print(loss)
-
-    # Compute L1 image loss
-    #loss = (opt_imgs - ref_imgs).abs().mean()
-    #loss = (to_optimize - ref)
-    #print(type(loss))
-    #print(loss)
+    #loss = loss_fn(v, v_ref)
+    loss = scale_independent_loss(opt_imgs, ref_imgs)
 
     # Backpropagate
     opt.zero_grad()
     loss.backward()
-    
+
     # Update parameters
     opt.step()
 
