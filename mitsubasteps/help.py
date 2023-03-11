@@ -31,7 +31,7 @@ def compute_mitsuba_scene(v, n, f):
     #print(mesh_params)
     mesh_params['vertex_positions'] = dr.ravel(vertex_pos)
     mesh_params['faces'] = dr.ravel(face_norms)
-    mesh_params['vertex_normals'] = dr.ravel(face_norms)
+    mesh_params['vertex_normals'] = dr.ravel(normals)
     mesh_params.update()
     #print(mesh_params.update())
 
