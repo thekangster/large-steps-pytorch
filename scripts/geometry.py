@@ -1,4 +1,6 @@
 import torch
+import mitsuba as mi
+import drjit as dr
 
 def remove_duplicates(v, f):
     """
@@ -110,6 +112,7 @@ def compute_face_normals(verts, faces):
     n = c / torch.norm(c, dim=0)
     return n
 
+
 def safe_acos(x):
     return torch.acos(x.clamp(min=-1, max=1))
 
@@ -145,3 +148,108 @@ def compute_vertex_normals(verts, faces, face_normals):
         for j in range(3):
             normals[j].index_add_(0, fi[i], nn[j])
     return (normals / torch.norm(normals, dim=0)).transpose(0, 1)
+
+"""
+def compute_matrix(positions: mi.Float, faces: mi.UInt, lambda_: float) -> torch.Tensor:
+    positions = mi.TensorXf(positions, shape=(len(positions) // 3, 3))
+    faces = mi.TensorXf(faces, shape=(len(faces) // 3, 3))
+
+    positions = positions.torch()
+    faces = faces.torch()
+
+    from largesteps.geometry import compute_matrix
+
+    M = compute_matrix(positions, faces, lambda_)
+
+    return M
+"""
+
+def tensor_to_point3f(T):
+    to_vector = T.tolist()
+    x = dr.zeros(mi.Float, len(to_vector))
+    y = dr.zeros(mi.Float, len(to_vector))
+    z = dr.zeros(mi.Float, len(to_vector))
+
+    for i, vec in enumerate(to_vector):
+        x[i] = vec[0]
+        y[i] = vec[1]
+        z[i] = vec[2]
+
+    return mi.Point3f(x, y, z)
+
+def mi_compute_face_normals(verts: mi.Float, faces: mi.UInt) -> torch.Tensor:
+    verts = mi.TensorXf(verts, shape=(len(verts) // 3, 3))
+    faces = mi.TensorXf(faces, shape=(len(faces) // 3, 3))
+
+    verts = verts.torch()
+    faces = faces.torch()
+
+    fi = torch.transpose(faces, 0, 1).long()
+    verts = torch.transpose(verts, 0, 1)
+
+    v = [verts.index_select(1, fi[0]),
+                 verts.index_select(1, fi[1]),
+                 verts.index_select(1, fi[2])]
+
+    c = torch.cross(v[1] - v[0], v[2] - v[0])
+    n = c / torch.norm(c, dim=0)
+    return n#tensor_to_point3f(n)
+
+"""
+def from_differential(M: torch.Tensor, u: mi.Float, method="Cholesky") -> mi.Float:
+    u = mi.TensorXf(u, shape=(len(u) // 3, 3))
+
+    @dr.wrap_ad(source="drjit", target="torch")
+    def to_differential_internal(u: torch.Tensor):
+        from largesteps.parameterize import from_differential
+
+        return from_differential(M, u, method)
+
+    return to_differential_internal(u).array
+"""
+def tensor_to_mifloat(T):
+    n = len(T)*3
+    to_vector = T.tolist()
+    x = dr.zeros(mi.Float, n)
+
+    i = 0
+    for vec in to_vector:
+        x[i] = vec[0]
+        x[i+1] = vec[1]
+        x[i+2] = vec[2]
+        i += 3
+
+    return mi.Float(x)
+
+def mi_compute_vertex_normals(verts: mi.Float, faces: mi.UInt, face_normals: torch.Tensor):
+    #print(f"{verts=}")
+    #print(f"{type(verts)=}")
+    #print(f"{len(verts)=}")
+    verts = mi.TensorXf(verts, shape=(len(verts) // 3, 3))
+    faces = mi.TensorXf(faces, shape=(len(faces) // 3, 3))
+    #print(f"{verts=}")
+
+    verts = verts.torch()
+    faces = faces.torch()
+    #print(f"{verts=}")
+    #print(f"{tensor_to_mifloat(verts)=}")
+
+    fi = torch.transpose(faces, 0, 1).long()
+    verts = torch.transpose(verts, 0, 1)
+    normals = torch.zeros_like(verts)
+
+    v = [verts.index_select(1, fi[0]),
+             verts.index_select(1, fi[1]),
+             verts.index_select(1, fi[2])]
+
+    for i in range(3):
+        d0 = v[(i + 1) % 3] - v[i]
+        d0 = d0 / torch.norm(d0)
+        d1 = v[(i + 2) % 3] - v[i]
+        d1 = d1 / torch.norm(d1)
+        d = torch.sum(d0*d1, 0)
+        face_angle = safe_acos(torch.sum(d0*d1, 0))
+        nn =  face_normals * face_angle
+        for j in range(3):
+            normals[j].index_add_(0, fi[i], nn[j])
+    return tensor_to_mifloat((normals / torch.norm(normals, dim=0)).transpose(0, 1))

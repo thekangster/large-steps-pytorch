@@ -81,6 +81,9 @@ print(params)
 
 positions = params["mesh.vertex_positions"]
 faces = params["mesh.faces"]
+print("vertex_normals\n")
+print(params["mesh.vertex_normals"])
+
 
 step_size = 3e-2 # Step size
 lambda_ = 19 # Hyperparameter lambda of our method, used to compute the matrix (I + lambda_*L)
@@ -94,20 +97,40 @@ print(f"{opt=}")
 # params.update()
 # params.update(opt)
 
+from scripts.geometry import mi_compute_vertex_normals, mi_compute_face_normals
+#face_normals = compute_face_normals(v, f)
+#n = compute_vertex_normals(v, f, face_normals)
+
+positions = params["mesh.vertex_positions"]
+faces = params["mesh.faces"]
+#face_normals = params["mesh.vertex_normals"]
+fn = mi_compute_face_normals(positions, faces)
+n = mi_compute_vertex_normals(positions, faces, fn)
+print(f"{fn=}")
+print(f"{n=}")
+
 steps = 200
 for it in trange(steps):
+    from scripts.geometry import compute_vertex_normals, compute_face_normals
+
+    positions = params["mesh.vertex_positions"]
+    faces = params["mesh.faces"]
+
     u = opt["u"]
     v = util.from_differential(M, u)
     params["mesh.vertex_positions"] = v
+
+    fn = mi_compute_face_normals(positions, faces)
+    n = mi_compute_vertex_normals(positions, faces, fn)
+    params["mesh.vertex_normals"] = n
+
     params.update()
 
     img = mi.render(scene, params, spp=1)
     #mi.util.write_bitmap(f"out/{i}.jpg", img)
 
     loss = dr.mean(dr.sqr(img - ref))
-
     dr.backward(loss)
-
     opt.step()
 
 img = mi.render(scene, params, spp=1)

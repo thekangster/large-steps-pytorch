@@ -11,7 +11,7 @@ import torch
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    mi.set_variant("cuda_ad_rgb")
+    mi.set_variant("llvm_ad_rgb")
 
 def display(render):
     plt.axis("off")
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     mesh = mi.load_dict(
         {
             "type": "ply",
-            "filename": "data/triangle.ply",
+            "filename": "scenes/suzanne/meshes/target.ply",
             "face_normals": True,
         }
     )
@@ -138,5 +138,6 @@ if __name__ == "__main__":
     u = to_differential(M, positions)
 
     print(f"{type(u)=}")
+    print(f"{u=}")
 
     v = from_differential(M, u)
