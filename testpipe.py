@@ -7,7 +7,7 @@ import trimesh
 from tqdm import trange
 
 mi.set_variant('llvm_ad_rgb')
-import util
+import help 
 
 suzanne = mi.load_dict(
     {
@@ -38,8 +38,6 @@ scene_dict = {
             "type": "hdrfilm",
         },
     },
-    # "mesh": util.trimesh2mitsuba(trimesh.creation.icosphere()),
-    # "mesh": suzanne,
     "floor": {
         "type": "rectangle",
         "to_world": T.translate([0, 0, -1]).scale(10),
@@ -55,25 +53,12 @@ scene_dict = {
 }
 
 scene_ref = mi.load_dict({**scene_dict, **{"mesh": suzanne}})
-
-ref = mi.render(scene_ref, spp=128)
-#util.display(ref)
+ref = mi.render(scene_ref, spp=1)
+#help.display(ref)
 
 scene = mi.load_dict({**scene_dict, **{"mesh": source}})
-"""
-scene = mi.load_dict(
-    {
-        **scene_dict,
-        **{
-            "mesh": util.trimesh2mitsuba(
-                trimesh.creation.icosphere(subdivisions=4, radius=0.5)
-            )
-        },
-    }
-)
-"""
-src = mi.render(scene, spp=128)
-#util.display(src)
+src = mi.render(scene, spp=1)
+#help.display(src)
 
 params = mi.traverse(scene)
 print(params)
@@ -88,15 +73,14 @@ print(params["mesh.vertex_normals"])
 step_size = 3e-2 # Step size
 lambda_ = 19 # Hyperparameter lambda of our method, used to compute the matrix (I + lambda_*L)
 
-M = util.compute_matrix(positions, faces, lambda_=lambda_)
-u = util.to_differential(M, positions)
+M = help.compute_matrix(positions, faces, lambda_=lambda_)
+u = help.to_differential(M, positions)
 
 opt = mi.ad.Adam(lr=0.01)
 opt["u"] = u
 print(f"{opt=}")
-# params.update()
-# params.update(opt)
 
+"""
 from scripts.geometry import mi_compute_vertex_normals, mi_compute_face_normals
 positions = params["mesh.vertex_positions"]
 faces = params["mesh.faces"]
@@ -104,29 +88,29 @@ fn = mi_compute_face_normals(positions, faces)
 n = mi_compute_vertex_normals(positions, faces, fn)
 print(f"{fn=}")
 print(f"{n=}")
+"""
 
-steps = 200
+steps = 500
 for it in trange(steps):
-    positions = params["mesh.vertex_positions"]
-    faces = params["mesh.faces"]
 
     u = opt["u"]
-    v = util.from_differential(M, u)
+    v = help.from_differential(M, u)
     params["mesh.vertex_positions"] = v
 
-    fn = mi_compute_face_normals(positions, faces)
-    n = mi_compute_vertex_normals(positions, faces, fn)
+    positions = params["mesh.vertex_positions"]
+    faces = params["mesh.faces"]
+    fn = help.mi_compute_face_normals(positions, faces)
+    n = help.mi_compute_vertex_normals(positions, faces, fn)
     params["mesh.vertex_normals"] = n
 
     params.update()
 
     img = mi.render(scene, params, spp=1)
-    #mi.util.write_bitmap(f"out/{i}.jpg", img)
 
     loss = dr.mean(dr.sqr(img - ref))
     dr.backward(loss)
     opt.step()
 
-img = mi.render(scene, params, spp=128)
-util.display(img)
+img = mi.render(scene, params, spp=1)
+help.display(img)
 
