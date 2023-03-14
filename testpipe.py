@@ -56,7 +56,7 @@ scene_dict = {
 
 scene_ref = mi.load_dict({**scene_dict, **{"mesh": suzanne}})
 
-ref = mi.render(scene_ref, spp=1)
+ref = mi.render(scene_ref, spp=128)
 #util.display(ref)
 
 scene = mi.load_dict({**scene_dict, **{"mesh": source}})
@@ -72,7 +72,7 @@ scene = mi.load_dict(
     }
 )
 """
-src = mi.render(scene, spp=1)
+src = mi.render(scene, spp=128)
 #util.display(src)
 
 params = mi.traverse(scene)
@@ -91,19 +91,15 @@ lambda_ = 19 # Hyperparameter lambda of our method, used to compute the matrix (
 M = util.compute_matrix(positions, faces, lambda_=lambda_)
 u = util.to_differential(M, positions)
 
-opt = mi.ad.Adam(lr=0.001)
+opt = mi.ad.Adam(lr=0.01)
 opt["u"] = u
 print(f"{opt=}")
 # params.update()
 # params.update(opt)
 
 from scripts.geometry import mi_compute_vertex_normals, mi_compute_face_normals
-#face_normals = compute_face_normals(v, f)
-#n = compute_vertex_normals(v, f, face_normals)
-
 positions = params["mesh.vertex_positions"]
 faces = params["mesh.faces"]
-#face_normals = params["mesh.vertex_normals"]
 fn = mi_compute_face_normals(positions, faces)
 n = mi_compute_vertex_normals(positions, faces, fn)
 print(f"{fn=}")
@@ -111,8 +107,6 @@ print(f"{n=}")
 
 steps = 200
 for it in trange(steps):
-    from scripts.geometry import compute_vertex_normals, compute_face_normals
-
     positions = params["mesh.vertex_positions"]
     faces = params["mesh.faces"]
 
@@ -133,6 +127,6 @@ for it in trange(steps):
     dr.backward(loss)
     opt.step()
 
-img = mi.render(scene, params, spp=1)
+img = mi.render(scene, params, spp=128)
 util.display(img)
 

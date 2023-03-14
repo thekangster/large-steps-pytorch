@@ -149,21 +149,6 @@ def compute_vertex_normals(verts, faces, face_normals):
             normals[j].index_add_(0, fi[i], nn[j])
     return (normals / torch.norm(normals, dim=0)).transpose(0, 1)
 
-"""
-def compute_matrix(positions: mi.Float, faces: mi.UInt, lambda_: float) -> torch.Tensor:
-    positions = mi.TensorXf(positions, shape=(len(positions) // 3, 3))
-    faces = mi.TensorXf(faces, shape=(len(faces) // 3, 3))
-
-    positions = positions.torch()
-    faces = faces.torch()
-
-    from largesteps.geometry import compute_matrix
-
-    M = compute_matrix(positions, faces, lambda_)
-
-    return M
-"""
-
 def tensor_to_point3f(T):
     to_vector = T.tolist()
     x = dr.zeros(mi.Float, len(to_vector))
@@ -195,19 +180,7 @@ def mi_compute_face_normals(verts: mi.Float, faces: mi.UInt) -> torch.Tensor:
     n = c / torch.norm(c, dim=0)
     return n#tensor_to_point3f(n)
 
-"""
-def from_differential(M: torch.Tensor, u: mi.Float, method="Cholesky") -> mi.Float:
-    u = mi.TensorXf(u, shape=(len(u) // 3, 3))
-
-    @dr.wrap_ad(source="drjit", target="torch")
-    def to_differential_internal(u: torch.Tensor):
-        from largesteps.parameterize import from_differential
-
-        return from_differential(M, u, method)
-
-    return to_differential_internal(u).array
-"""
-def tensor_to_mifloat(T):
+def tensor_to_mifloat(T: torch.Tensor) -> mi.Float:
     n = len(T)*3
     to_vector = T.tolist()
     x = dr.zeros(mi.Float, n)
@@ -221,7 +194,7 @@ def tensor_to_mifloat(T):
 
     return mi.Float(x)
 
-def mi_compute_vertex_normals(verts: mi.Float, faces: mi.UInt, face_normals: torch.Tensor):
+def mi_compute_vertex_normals(verts: mi.Float, faces: mi.UInt, face_normals: torch.Tensor) -> mi.Float:
     #print(f"{verts=}")
     #print(f"{type(verts)=}")
     #print(f"{len(verts)=}")
