@@ -90,7 +90,7 @@ print(f"{fn=}")
 print(f"{n=}")
 """
 
-steps = 500
+steps = 200
 for it in trange(steps):
 
     u = opt["u"]
@@ -99,16 +99,17 @@ for it in trange(steps):
 
     positions = params["mesh.vertex_positions"]
     faces = params["mesh.faces"]
-    fn = help.mi_compute_face_normals(positions, faces)
-    n = help.mi_compute_vertex_normals(positions, faces, fn)
+
+    face_normals = help.mi_compute_face_normals(positions, faces)
+    n = help.mi_compute_vertex_normals(positions, faces, face_normals)
     params["mesh.vertex_normals"] = n
 
     params.update()
 
     img = mi.render(scene, params, spp=1)
-
-    loss = dr.mean(dr.sqr(img - ref))
+    loss = dr.mean(dr.abs(img - ref))
     dr.backward(loss)
+
     opt.step()
 
 img = mi.render(scene, params, spp=1)
