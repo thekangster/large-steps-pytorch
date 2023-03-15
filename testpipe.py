@@ -27,6 +27,25 @@ source = mi.load_dict(
 
 scene_dict = {
     "type": "scene",
+    "integrator": {"type": "path"},
+    "light": {
+        "type": "point",
+        "position": [0.0, -1.0, 7.0],
+        "intensity": {
+            "type": "spectrum",
+            "value": 15.0,
+            }
+        },
+    "sensor": {
+        "type": "perspective",
+        "to_world": mi.ScalarTransform4f.look_at(
+            origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
+            ),
+        },
+}
+
+scene_dictold = {
+    "type": "scene",
     "integrator": {
         "type": "path",
     },
@@ -90,7 +109,7 @@ print(f"{fn=}")
 print(f"{n=}")
 """
 
-steps = 200
+steps = 1000
 for it in trange(steps):
 
     u = opt["u"]
