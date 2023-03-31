@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from mitsuba.scalar_rgb import Transform4f as T
 import numpy as np
 import trimesh
-import tqdm
+from tqdm import trange
 
-mi.set_variant("llvm_ad_rgb")
+mi.set_variant("cuda_ad_rgb")
 import help
 suzanne = mi.load_dict(
     {
@@ -76,7 +76,7 @@ ref = mi.render(scene_ref, spp=1)
 
 scene = mi.load_dict({**scene_dict, **{"mesh": source}})
 src = mi.render(scene, spp=1)
-#help.display(src)
+help.display(src)
 
 params = mi.traverse(scene)
 print(params)
