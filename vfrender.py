@@ -4,6 +4,7 @@ import drjit as dr
 import trimesh
 import xatlas
 
+"""
 mesh = trimesh.load_mesh("00190663.obj")
 vmapping, indices, uvs = xatlas.parametrize(mesh.vertices, mesh.faces)
 xatlas.export("output.obj", mesh.vertices[vmapping], indices, uvs)
@@ -48,8 +49,7 @@ img = mi.render(scene)
 plt.axis("off")
 plt.imshow(mi.util.convert_to_bitmap(img));
 plt.show()
-
-
+"""
 
 '''
 # imports
@@ -73,8 +73,7 @@ image_ref = mi.render(scene_params, spp=512)
 plt.axis("off")
 plt.imshow(mi.util.convert_to_bitmap(image_ref));
 plt.show()
-"""
-
+'''
 # get largesteps scene params
 scene_large = load_scene(filepath)
 # Load reference shape
@@ -98,37 +97,57 @@ def tensor_to_point3f(T):
 
     return mi.Point3f(x, y, z)
 
-# tensor -> point3f ??
+# tensor -> point3f
 vertex_pos = tensor_to_point3f(v_ref)
+#vertex_pos = tensor_to_point3f(v)
+
+# generate face indices ??
+'''
+N = len(v_ref)
+index = dr.arange(mi.UInt32, N - 1)
+face_indices = mi.Vector3u(N - 1, (index + 1) % (N - 2), index % (N - 2))
+'''
 
 # generate face normals ??
 face_norms = tensor_to_point3f(f_ref)
+#face_norms = tensor_to_point3f(f)
+
+vertex_norms = tensor_to_point3f(n_ref)
 
 # create mesh
 mesh = mi.Mesh(
     "mymesh", 
     len(v_ref), 
-    len(f_ref), 
-    has_vertex_normals=False, 
+    #len(v_ref)-1,
+    len(f_ref),
+    has_vertex_normals=True, 
     has_vertex_texcoords=False,
 )
 
 mesh_params = mi.traverse(mesh)
-print(mesh_params)
+#print(mesh_params)
 mesh_params['vertex_positions'] = dr.ravel(vertex_pos)
 mesh_params['faces'] = dr.ravel(face_norms)
-#mesh_params['vertex_normals'] = dr.ravel(face_norms)
+mesh_params['vertex_normals'] = dr.ravel(vertex_norms)
 print(mesh_params.update())
 
+'''
+'type': 'point',
+'position': [0.0, -1.0, 7.0],
+'intensity': {
+    'type': 'spectrum',
+    'value': 15.0,
+}
+'''
 scene = mi.load_dict({
     "type": "scene",
     "integrator": {"type": "path"},
     "light": {
-        "type": "point",
-        "position": [0.0, -1.0, 7.0],
-        "intensity": {
-            "type": "spectrum",
-            "value": 15.0,
+        'type': 'point',
+        'position': [0.0, -1.0, 7.0],
+        'intensity': {
+            'type': 'spectrum',
+            'value': 15.0,
         }
     },
     "sensor": {
@@ -148,4 +167,3 @@ plt.show()
 
 #mesh.write_ply("mymesh.ply")
 
-'''
