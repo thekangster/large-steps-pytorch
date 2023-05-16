@@ -77,7 +77,7 @@ ref = mi.render(scene_ref, spp=1)
 
 scene = mi.load_dict({**scene_dict, **{"mesh": source}})
 src = mi.render(scene, spp=1)
-#help.display(src)
+help.display(src)
 
 params = mi.traverse(scene)
 print(params)
@@ -95,7 +95,7 @@ lambda_ = 19 # Hyperparameter lambda of our method, used to compute the matrix (
 M = help.compute_matrix(positions, faces, lambda_=lambda_)
 u = help.to_differential(M, positions)
 
-opt = mi.ad.Adam(lr=0.01)
+opt = mi.ad.Adam(lr=0.01, uniform=True)
 opt["u"] = u
 print(f"{opt=}")
 
@@ -109,7 +109,7 @@ print(f"{fn=}")
 print(f"{n=}")
 """
 
-steps = 1000
+steps = 500
 for it in trange(steps):
 
     u = opt["u"]
