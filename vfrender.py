@@ -4,6 +4,7 @@ import drjit as dr
 import trimesh
 import xatlas
 
+"""
 mesh = trimesh.load_mesh("00190663.obj")
 vmapping, indices, uvs = xatlas.parametrize(mesh.vertices, mesh.faces)
 xatlas.export("output.obj", mesh.vertices[vmapping], indices, uvs)
@@ -48,8 +49,7 @@ img = mi.render(scene)
 plt.axis("off")
 plt.imshow(mi.util.convert_to_bitmap(img));
 plt.show()
-
-
+"""
 
 '''
 # imports
@@ -167,4 +167,3 @@ plt.show()
 
 #mesh.write_ply("mymesh.ply")
 
-'''
