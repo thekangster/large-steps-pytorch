@@ -57,7 +57,7 @@ def laplacian_cot(verts, faces):
 
     # Add the diagonal indices
     vals = torch.sparse.sum(L, dim=0).to_dense()
-    indices = torch.arange(V, device='cuda')
+    indices = torch.arange(V, device='cpu')
     idx = torch.stack([indices, indices], dim=0)
     L = torch.sparse.FloatTensor(idx, vals, (V, V)) - L
     return L
@@ -80,7 +80,7 @@ def laplacian_uniform(verts, faces):
     ii = faces[:, [1, 2, 0]].flatten()
     jj = faces[:, [2, 0, 1]].flatten()
     adj = torch.stack([torch.cat([ii, jj]), torch.cat([jj, ii])], dim=0).unique(dim=1)
-    adj_values = torch.ones(adj.shape[1], device='cuda', dtype=torch.float)
+    adj_values = torch.ones(adj.shape[1], device='cpu', dtype=torch.float)
 
     # Diagonal indices
     diag_idx = adj[0]
@@ -122,8 +122,8 @@ def compute_matrix(verts, faces, lambda_, alpha=None, cotan=False):
     else:
         L = laplacian_uniform(verts, faces)
 
-    idx = torch.arange(verts.shape[0], dtype=torch.long, device='cuda')
-    eye = torch.sparse_coo_tensor(torch.stack((idx, idx), dim=0), torch.ones(verts.shape[0], dtype=torch.float, device='cuda'), (verts.shape[0], verts.shape[0]))
+    idx = torch.arange(verts.shape[0], dtype=torch.long, device='cpu')
+    eye = torch.sparse_coo_tensor(torch.stack((idx, idx), dim=0), torch.ones(verts.shape[0], dtype=torch.float, device='cpu'), (verts.shape[0], verts.shape[0]))
     if alpha is None:
         M = torch.add(eye, lambda_*L) # M = I + lambda_ * L
     else:

@@ -2,45 +2,9 @@ import xml.etree.ElementTree as ET
 import os
 import torch
 import numpy as np
-from scripts.io_ply import read_ply
-import imageio
-imageio.plugins.freeimage.download()
-
-def rotation_matrix(axis, angle):
-    """
-    Builds a homogeneous coordinate rotation matrix along an axis
-
-    Parameters
-    ----------
-
-    axis : str
-        Axis of rotation, x, y, or z
-    angle : float
-        Rotation angle, in degrees
-    """
-    assert axis in 'xyz', "Invalid axis, expected x, y or z"
-    mat = torch.eye(4, device='cpu')
-    theta = np.deg2rad(angle)
-    idx = 'xyz'.find(axis)
-    mat[(idx+1)%3, (idx+1)%3] = np.cos(theta)
-    mat[(idx+2)%3, (idx+2)%3] = np.cos(theta)
-    mat[(idx+1)%3, (idx+2)%3] = -np.sin(theta)
-    mat[(idx+2)%3, (idx+1)%3] = np.sin(theta)
-    return mat
-
-def translation_matrix(tr):
-    """
-    Builds a homogeneous coordinate translation matrix
-
-    Parameters
-    ----------
-
-    tr : numpy.array
-        translation value
-    """
-    mat = torch.eye(4, device='cpu')
-    mat[:3,3] = torch.tensor(tr, device='cpu')
-    return mat
+import drjit as dr
+import mitsuba as mi
+import matplotlib.pyplot as plt
 
 def load_scene(filepath):
     """
@@ -74,7 +38,7 @@ def load_scene(filepath):
                 scene_params["res_y"] = int(plugin.attrib["value"])
         elif plugin.tag == "sensor":
             view_mats = scene_params["view_mats"]
-            view_mat = torch.eye(4, device='cpu')
+            view_mat = torch.eye(4, device='cuda')
             for prop in plugin:
 
                 if prop.tag == "float":
@@ -102,9 +66,9 @@ def load_scene(filepath):
             for prop in plugin:
                 if prop.tag == "string" and prop.attrib["name"] == "filename":
                     envmap_path = os.path.join(folder, prop.attrib["value"])
-                    envmap = torch.tensor(imageio.imread(envmap_path, format='HDR-FI'), device='cpu')
+                    envmap = torch.tensor(imageio.imread(envmap_path, format='HDR-FI'), device='cuda')
                     # Add alpha channel
-                    alpha = torch.ones((*envmap.shape[:2],1), device='cpu')
+                    alpha = torch.ones((*envmap.shape[:2],1), device='cuda')
                     scene_params["envmap"] = torch.cat((envmap, alpha), dim=-1)
                 elif prop.tag == "float" and prop.attrib["name"] == "scale":
                     scene_params["envmap_scale"] = float(prop.attrib["value"])
@@ -124,3 +88,9 @@ def load_scene(filepath):
     assert len(scene_params["view_mats"]) > 0, "At least one camera needed"
 
     return scene_params
+
+filepath = os.path.join(os.getcwd(), "scenes", "cbox.xml")
+print(filepath)
+scene_params = load_scene(filepath)
+
+

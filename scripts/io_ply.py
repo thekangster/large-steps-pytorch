@@ -146,10 +146,10 @@ def read_ply(filename):
                     dtypes["face"][n + 1][1])
 
         # Convert to PyTorch array
-        data["vertices"] = torch.tensor(vertex_data[["x", "y", "z"]].values, device='cuda')
+        data["vertices"] = torch.tensor(vertex_data[["x", "y", "z"]].values, device='cpu')
         if "nx" in vertex_data.columns:
-            data["normals"] = torch.tensor(vertex_data[["nx", "ny", "nz"]].values, device='cuda')
-        data["faces"] = torch.tensor(data["faces"].to_numpy(), device='cuda')
+            data["normals"] = torch.tensor(vertex_data[["nx", "ny", "nz"]].values, device='cpu')
+        data["faces"] = torch.tensor(data["faces"].to_numpy(), device='cpu')
 
     else:
         with open(filename, 'rb') as ply:
@@ -157,9 +157,9 @@ def read_ply(filename):
             points_np = np.fromfile(ply, dtype=dtypes["vertex"], count=points_size)
             if ext != sys_byteorder:
                 points_np = points_np.byteswap().newbyteorder()
-            data["vertices"] = torch.tensor(np.stack((points_np["x"],points_np["y"],points_np["z"]), axis=1), device='cuda')
+            data["vertices"] = torch.tensor(np.stack((points_np["x"],points_np["y"],points_np["z"]), axis=1), device='cpu')
             if "nx" in points_np.dtype.fields.keys():
-                data["normals"] = torch.tensor(np.stack((points_np["nx"],points_np["ny"],points_np["nz"]), axis=1), device='cuda')
+                data["normals"] = torch.tensor(np.stack((points_np["nx"],points_np["ny"],points_np["nz"]), axis=1), device='cpu')
             if mesh_size:
                 mesh_np = np.fromfile(ply, dtype=dtypes["face"], count=mesh_size)
                 if ext != sys_byteorder:
@@ -167,7 +167,7 @@ def read_ply(filename):
 
                 assert (mesh_np["n_points"] == 3*np.ones_like(mesh_np["n_points"])).all(), "Only triangle meshes are supported!"
 
-                data["faces"] = torch.tensor(np.stack((mesh_np["v1"], mesh_np["v2"], mesh_np["v3"]), axis=1), device='cuda')
+                data["faces"] = torch.tensor(np.stack((mesh_np["v1"], mesh_np["v2"], mesh_np["v3"]), axis=1), device='cpu')
 
     return data
 
