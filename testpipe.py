@@ -8,15 +8,19 @@ from tqdm import trange
 
 mi.set_variant('llvm_ad_rgb')
 import help 
+import util
 
 suzanne = mi.load_dict(
     {
         "type": "ply",
-        "filename": "scenes/suzanne/meshes/target.ply",
+        #"filename": "scenes/suzanne/meshes/target.ply",
+        "filename": "../capybara.ply",
         "face_normals": True,
+        "to_world" : mi.ScalarTransform4f.rotate([0,0,1], angle = 180),
     }
 )
 
+'''
 source = mi.load_dict(
     {
         "type": "ply",
@@ -24,6 +28,7 @@ source = mi.load_dict(
         "face_normals": True,
     }
 )
+'''
 
 scene_dict = {
     "type": "scene",
@@ -39,7 +44,7 @@ scene_dict = {
     "sensor": {
         "type": "perspective",
         "to_world": mi.ScalarTransform4f.look_at(
-            origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
+            origin=[5, 5, 3], target=[0, 0, -1], up=[0, 0, -1]
             ),
         },
 }
@@ -51,10 +56,12 @@ scene_dictold = {
     },
     "sensor": {
         "type": "perspective",
-        "to_world": T.look_at(origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]),
+        "to_world": T.look_at(origin=[5, 5, 5], target=[0, 0, 0], up=[0, 0, 1]),
         #origin=(0, 2, 2), target=(0, 0, 0), up=(0, 0, -1)),
         "film": {
             "type": "hdrfilm",
+            "width": 1024,
+            "height": 1024,
         },
     },
     "floor": {
@@ -71,11 +78,21 @@ scene_dictold = {
     },
 }
 
-scene_ref = mi.load_dict({**scene_dict, **{"mesh": suzanne}})
+scene_ref = mi.load_dict({**scene_dictold, **{"mesh": suzanne}})
 ref = mi.render(scene_ref, spp=1)
-#help.display(ref)
+help.display(ref)
 
-scene = mi.load_dict({**scene_dict, **{"mesh": source}})
+#scene = mi.load_dict({**scene_dict, **{"mesh": source}})
+scene = mi.load_dict(
+    {
+        **scene_dictold,
+        **{
+            "mesh": util.trimesh2mitsuba(
+                trimesh.creation.icosphere(subdivisions=4, radius=0.5)
+            )
+        },
+    }
+)
 src = mi.render(scene, spp=1)
 help.display(src)
 
@@ -109,7 +126,7 @@ print(f"{fn=}")
 print(f"{n=}")
 """
 
-steps = 500
+steps = 300
 for it in trange(steps):
 
     u = opt["u"]
