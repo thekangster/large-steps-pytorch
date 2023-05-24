@@ -14,7 +14,7 @@ suzanne = mi.load_dict(
     {
         "type": "ply",
         #"filename": "scenes/suzanne/meshes/target.ply",
-        "filename": "../capybara.ply",
+        "filename": "./our_scenes/capybara.ply",
         "face_normals": True,
         "to_world" : mi.ScalarTransform4f.rotate([0,0,1], angle = 180),
     }
