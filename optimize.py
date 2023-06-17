@@ -15,13 +15,6 @@ suzanne = mi.load_dict(
         "face_normals": True,
     }
 )
-dragon = mi.load_dict(
-    {
-        "type": "ply",
-        "filename": "scenes/dragon/meshes/target.ply",
-        "face_normals": True,
-    }
-)
 
 source = mi.load_dict(
     {
@@ -36,7 +29,8 @@ scene_dict = {
     "integrator": {"type": "path"},
     "light": {
         "type": "point",
-        "position": [0.0, -1.0, 7.0],
+        #"position": [0.0, -1.0, 7.0],
+        "position": [0, 2, 5],
         "intensity": {
             "type": "spectrum",
             "value": 15.0,
@@ -46,9 +40,12 @@ scene_dict = {
         "type": "perspective",
         "to_world": mi.ScalarTransform4f.look_at(
             origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]
-            #origin=[0, 2, 2], target=[0, 0, 0], up=[0, 0, -1]
+            #origin=[2, 6, 2], target=[0, 0, 0], up=[0, 0, -1]
             ),
+        "film": {
+            "type": "hdrfilm",
         },
+    },
 }
 
 scene_dictold = {
@@ -58,32 +55,57 @@ scene_dictold = {
     },
     "sensor": {
         "type": "perspective",
-        "to_world": T.look_at(origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]),
-        #origin=(0, 2, 2), target=(0, 0, 0), up=(0, 0, -1)),
+        "to_world": T.look_at(origin=(0, 2, 2), target=(0, 0, 0), up=(0, 0, 1)),
         "film": {
             "type": "hdrfilm",
+            "width": 1024,
+            "height": 1024,
         },
     },
-    "floor": {
-        "type": "rectangle",
-        "to_world": T.translate([0, 0, -1]).scale(10),
-    },
+    # "mesh": util.trimesh2mitsuba(trimesh.creation.icosphere()),
+    # "mesh": suzanne,
     "light": {
         "type": "point",
-        "position": [0, 2, 5],
+        "position": [1, 2, 2],
         "intensity": {
             "type": "spectrum",
             "value": 10.0,
         },
     },
 }
+#scene_dictold = {
+#    "type": "scene",
+#    "integrator": {
+#        "type": "path",
+#    },
+#    "sensor": {
+#        "type": "perspective",
+#        "to_world": T.look_at(origin=[0, 2, 7], target=[0, 0, 0], up=[0, 0, -1]),
+#        #origin=(0, 2, 2), target=(0, 0, 0), up=(0, 0, -1)),
+#        "film": {
+#            "type": "hdrfilm",
+#        },
+#    },
+#    "floor": {
+#        "type": "rectangle",
+#        "to_world": T.translate([0, 0, -1]).scale(10),
+#    },
+#    "light": {
+#        "type": "point",
+#        "position": [0, 2, 5],
+#        "intensity": {
+#            "type": "spectrum",
+#            "value": 10.0,
+#        },
+#    },
+#}
 
 scene_ref = mi.load_dict({**scene_dict, **{"mesh": suzanne}})
 ref = mi.render(scene_ref, spp=128)
 help.display(ref)
 
 scene = mi.load_dict({**scene_dict, **{"mesh": source}})
-src = mi.render(scene, spp=1)
+src = mi.render(scene, spp=128)
 #help.display(src)
 
 params = mi.traverse(scene)
@@ -106,17 +128,7 @@ opt = mi.ad.Adam(lr=0.01)
 opt["u"] = u
 print(f"{opt=}")
 
-"""
-from scripts.geometry import mi_compute_vertex_normals, mi_compute_face_normals
-positions = params["mesh.vertex_positions"]
-faces = params["mesh.faces"]
-fn = mi_compute_face_normals(positions, faces)
-n = mi_compute_vertex_normals(positions, faces, fn)
-print(f"{fn=}")
-print(f"{n=}")
-"""
-
-steps = 500
+steps = 300
 for it in trange(steps):
 
     u = opt["u"]
@@ -138,6 +150,6 @@ for it in trange(steps):
 
     opt.step()
 
-img = mi.render(scene, params, spp=1)
+img = mi.render(scene, params, spp=128)
 help.display(img)
 

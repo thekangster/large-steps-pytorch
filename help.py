@@ -12,6 +12,22 @@ if __name__ == "__main__":
 def safe_acos(x):
     return torch.acos(x.clamp(min=-1, max=1))
 
+def trimesh2mitsuba(mesh: trimesh.Trimesh) -> mi.Mesh:
+    vertices: np.ndarray = np.array(mesh.vertices)
+    indices: np.ndarray = np.array(mesh.faces)
+    mesh = mi.Mesh(
+        "trimesh",
+        vertex_count=vertices.shape[0],
+        face_count=indices.shape[0],
+        has_vertex_normals=False,
+        has_vertex_texcoords=False,
+    )
+
+    params = mi.traverse(mesh)
+    params["vertex_positions"] = dr.ravel(mi.Point3f(vertices))
+    params["faces"] = dr.ravel(mi.Vector3u(indices))
+    params.update()
+    return mesh
 
 def tensor_to_point3f(T):
     to_vector = T.tolist()
